@@ -30,23 +30,12 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 
 	//Method to import file to a path..
 	const importData = function (filePath, callback) {
-		//filePath = __dirname + "/SampleSheet.xlsx";
 		// read from a file
 		let workbook = new Excel.Workbook();
 		workbook.xlsx.readFile(filePath)
 			.then(function(fileData) {
-				//console.log(fileData.getColumn(1).header);
-				// use workbook....
-				//console.log(fileData) ;
-				//Config file which  contain all the model instance, where and values..
 				const sheetConfig = {};
 				fileData.eachSheet(function(worksheet, sheetId) {
-					/*console.log("\n");
-					const totalColumns = worksheet.columnCount;
-					console.log("Total Columns: ", totalColumns);
-					const totalActualRows = worksheet.actualRowCount;
-					console.log("Total Actual Rows: ", totalActualRows);*/
-					//console.log(worksheet.name);
 					//Model save data.. storage. .
 					sheetConfig[worksheet.name] = sheetConfig[worksheet.name] || [];
 					//Get workSheet settings
@@ -74,11 +63,9 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 			//console.log("\n Saving data for Sheet: " + sheetName);
 			if(sheetConfig.hasOwnProperty(sheetName)){
 				multipleSheetsSeries.push( function (callback) {
-
 					const sheetArray = sheetConfig[sheetName];
 					const series = [];
 					sheetArray.forEach(function (sheetRowObj) {
-
 						series.push(function (callback) {
 							saveSheetRowToServer(sheetRowObj, callback);
 						});
@@ -98,7 +85,6 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 
 		async.waterfall(multipleSheetsSeries, function (error, data) {
 			if(error){
-				console.log("Error occured");
 				console.error(error);
 				callback(error);
 			}else{
@@ -197,7 +183,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 			modelObj.instance.create(modelObj.data)
 				.then(function (dataObj) {
 					addSheetDataToResults(sheetRowObj, modelName, dataObj);
-					console.log(modelName + " Data saved successfully");
+					//console.log(modelName + " Data saved successfully");
 					callback(null);
 				})
 				.catch(function (error) {
@@ -211,7 +197,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 			})
 				.then(function (dataObj) {
 					if(dataObj){
-						console.log(modelObj.data);
+						//console.log(modelObj.data);
 						modelObj.data.id = dataObj.id ;
 					}
 					//Return promise object..
@@ -219,7 +205,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 				})
 				.then(function (dataObj) {
 					addSheetDataToResults(sheetRowObj, modelName, dataObj);
-					console.log(modelName + " Data updated successfully");
+					//console.log(modelName + " Data updated successfully");
 					callback(null);
 				})
 				.catch(function (error) {
@@ -227,7 +213,6 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 					callback(error);
 				});
 		}
-		callback(null);
 	};
 
 

@@ -36,14 +36,7 @@ angular.module($snaphy.getModuleName())
 
 			        file.upload.then(function(response) {
 				        $timeout(function() {
-					        //file.result = response.data.result.files.file[0];
-					        //console.log(response.result);
-					        file.result = response.data;
-					        if ($scope.model[$scope.options.key] === undefined) {
-						        $scope.model[$scope.options.key] = {};
-					        }
-					        //Adding data to the model.
-					        $scope.model[$scope.options.key] = file.result;
+
 				        });
 				        SnaphyTemplate.notify({
 					        message: "Data successfully saved to server.",
@@ -52,9 +45,16 @@ angular.module($snaphy.getModuleName())
 					        align: 'right'
 				        });
 			        }, function(response) {
+			        	console.log(response);
 				        if (response.status > 0) {
-				        	var message = response.message ||"Error saving data to server.";
-					        SnaphyTemplate.notify({
+				        	var message = "Error saving data to server.";
+					        if(response.data){
+					        	if(response.data.message){
+							        message = response.data.message;
+						        }
+					        }
+
+				        	SnaphyTemplate.notify({
 						        message: message,
 						        type: 'danger',
 						        icon: 'fa fa-times',
@@ -65,8 +65,14 @@ angular.module($snaphy.getModuleName())
 
 			        }, function(evt) {
 				        $timeout(function() {
-					        file.progress = Math.min(100, parseInt(100.0 *
+					        that.file.progress = Math.min(100, parseInt(100.0 *
 						        evt.loaded / evt.total));
+					        $(".progress-bar.progress-bar-primary")
+						        .each(function() {
+							        var $this = jQuery(this);
+							        var $random = that.file.progress + '%';
+							        $this.css('width', $random);
+						        });
 				        }, 10);
 			        });
 		        }

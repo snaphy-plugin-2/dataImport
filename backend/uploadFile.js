@@ -92,13 +92,11 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 
 		importDataFunc(filePath, function (error, data) {
 			if(error){
-				console.log("Error occured!!!!!!!");
 				callback(error);
 			}else{
-				console.log("Data saved.!!!");
 				callback(error, data);
-				deleteLocalFile(filePath);
 			}
+			deleteLocalFile(filePath);
 		});
 	}; //uploadImageToCloud..
 

@@ -19,17 +19,18 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 	const _ = require("lodash");
 	const async = require("async");
 	const {beforeSave} = require("./beforeSave")(server, databaseObj, helper, packageObj);
+	const uploadFile = require("./uploadFile")(server, databaseObj, helper, packageObj);
 
 	const init = function(){
-
+		uploadFile.init(importData);
 		//importData();
 	};
 
 	const {sheetColNumber} = packageObj.constants;
 
-
-	const importData = function () {
-		const filePath = __dirname + "/SampleSheet.xlsx";
+	//Method to import file to a path..
+	const importData = function (filePath, callback) {
+		//filePath = __dirname + "/SampleSheet.xlsx";
 		// read from a file
 		let workbook = new Excel.Workbook();
 		workbook.xlsx.readFile(filePath)
@@ -51,12 +52,12 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 					//Get workSheet settings
 					processWorkSheet(worksheet, sheetConfig);
 				});
-
 				//Now save sheets to server..
-				saveSheetsToServer(sheetConfig);
+				saveSheetsToServer(sheetConfig, callback);
 			})
 			.catch(function (error) {
 				console.error(error);
+				callback(error);
 			});
 	};
 
@@ -64,8 +65,9 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 	/**
 	 * Save final prepared sheets to database server..
 	 * @param sheetConfig
+	 * @param callback
 	 */
-	const saveSheetsToServer = function (sheetConfig) {
+	const saveSheetsToServer = function (sheetConfig, callback) {
 		const multipleSheetsSeries = [];
 		//Now saving sheets to the server..
 		for(let sheetName in sheetConfig){
@@ -98,8 +100,10 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 			if(error){
 				console.log("Error occured");
 				console.error(error);
+				callback(error);
 			}else{
 				//console.log("Data saved");
+				callback(null, "DataImport: Done file uploaded. data saved");
 			}
 		});
 	};

@@ -19,6 +19,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 	const _ = require("lodash");
 	const async = require("async");
 	const {beforeSave} = require("./beforeSave")(server, databaseObj, helper, packageObj);
+	const {afterSave} = require("./afterSave")(server, databaseObj, helper, packageObj);
 	const uploadFile = require("./uploadFile")(server, databaseObj, helper, packageObj);
 
 	const init = function(){
@@ -142,7 +143,48 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 								if(error){
 									callback(error);
 								}else{
-									saveModelToServer(sheetRowObj, modelObj, modelName, callback);
+									saveModelToServer(sheetRowObj, modelObj, modelName, function(error, data){
+										if(error){
+											callback(error);
+										}else{
+											//Call after save if any..present..
+											const afterSaveSeries = [];
+											if(modelObj.afterSave){
+												if(modelObj.afterSave.length){
+													//Now run each before save..
+													modelObj.afterSave.forEach(function (afterSaveMethodName) {
+														if(afterSave){
+															if(afterSave[afterSaveMethodName]){
+																afterSaveSeries.push(function (callback) {
+																	//Now call the method..
+																	afterSave[afterSaveMethodName](sheetRowObj, callback);
+																});
+															}
+														}
+													});
+												}
+											}
+
+											//Call after save if any..
+											if(afterSaveSeries){
+												if(afterSaveSeries.length){
+													//Saving modelObj data..
+													async.waterfall(afterSaveSeries, function (error, data) {
+														if(error){
+															callback(error);
+														}else{
+															callback(null);
+														}
+													});
+
+												}else{
+													callback(null);
+												}
+											}else{
+												callback(null);
+											}
+										}
+									});
 								}
 							});
 						}else{
@@ -358,6 +400,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 									dataObj[structureObj.model].where = where;
 									dataObj[structureObj.model].data = modelObj;
 									dataObj[structureObj.model].beforeSave = structureObj.beforeSave || [];
+									dataObj[structureObj.model].afterSave = structureObj.afterSave || [];
 									dataObj[structureObj.model].config = {
 										rowNumber: rowNumber,
 										parent: sheetConfig

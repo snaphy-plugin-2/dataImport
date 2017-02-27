@@ -109,7 +109,8 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 											AinakClassAndSection.findOne({
 												where:{
 													name: sheetRowObj.Student.data.class,
-													section: sheetRowObj.Student.data.section
+													section: sheetRowObj.Student.data.section,
+													schoolId: schoolId
 												}
 											})
 												.then(function (classInstance) {
@@ -154,6 +155,92 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 				return callback(new Error("School data not present for Student save"));
 			}
 
+		},
+		addParentBeforeSave: function (sheetRowObj, callback) {
+			//Get school data from parent sheet..
+			if(sheetRowObj.Parent.config){
+				if(sheetRowObj.Parent.config.parent){
+					//Get admin sheet
+					var dataList = sheetRowObj.Parent.config.parent["Admin"];
+					var row = dataList[0];
+					if(row){
+						if(row.School){
+							if(row.School.results){
+								let schoolId = row.School.results.id;
+								if(sheetRowObj.Parent){
+									if(sheetRowObj.Parent.data){
+										sheetRowObj.Parent.data.password = 12345;
+										sheetRowObj.Parent.data.schoolId = schoolId;
+										if(sheetRowObj.Parent.data.email){
+											sheetRowObj.Parent.where.schoolId = schoolId;
+											sheetRowObj.Parent.where.email = sheetRowObj.Parent.data.email;
+										}
+
+										if(sheetRowObj.Parent.data.studentClass !== undefined &&
+											sheetRowObj.Parent.data.studentSection !== undefined &&
+											sheetRowObj.Parent.data.studentName !== undefined ){
+											//Now set student class and section..
+											var AinakClassAndSection = server.models.AinakClassAndSection;
+											AinakClassAndSection.findOne({
+												where:{
+													name: sheetRowObj.Parent.data.studentClass,
+													section: sheetRowObj.Parent.data.studentSection,
+													schoolId: schoolId
+												}
+											})
+												.then(function (classInstance) {
+													if(!classInstance){
+														callback(new Error("Wrong class name given in Parent sheet of parent name: ", sheetRowObj.Parent.data.name));
+													}else{
+														sheetRowObj.Parent.data.ainakClassAndSectionId = classInstance.id;
+														/*if(sheetRowObj.Parent.data.email){
+															sheetRowObj.Parent.where.ainakClassAndSectionId = classInstance.id;
+														}*/
+														//Now fetch the data for student..
+														const Student = server.models.Student;
+														return Student.findOne({
+															where:{
+																schoolId: schoolId,
+																ainakClassAndSectionId: classInstance.id,
+																name: sheetRowObj.Parent.data.studentName
+															}
+														});
+													}
+												})
+												.then(function (studentInstance) {
+													if(studentInstance){
+														//Now get the class id..
+														sheetRowObj.Parent.data.studentId = studentInstance.id;
+														if(sheetRowObj.Parent.data.email){
+															sheetRowObj.Parent.where.studentId = studentInstance.id;
+														}
+
+														//Now delete unwanted data..
+														delete sheetRowObj.Parent.data.studentClass;
+														delete sheetRowObj.Parent.data.studentSection;
+														delete sheetRowObj.Parent.data.studentName;
+
+														callback(null);
+													}else{
+														callback(new Error("Class could not be created"));
+													}
+												})
+												.catch(function (error) {
+													callback(error);
+												});
+										}
+										else{
+											return callback(new Error("Parent data not correct for name" + sheetRowObj.Parent.data.name));
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}else{
+				return callback(new Error("School data not present for Parent save"));
+			}
 		}
 
 	};

@@ -1,13 +1,14 @@
 'use strict';
 module.exports = function( server, databaseObj, helper, packageObj) {
 	const Promise = require("bluebird");
+	const moment = require("moment");
 	//Method for storing before save..methods..
 	//MEthod can be added externally through plugin method attached to beforeSave.
 	const beforeSave = {
-		/**
-		 *
-		 * @param sheetRowObj
-		 * {
+        /**
+         *
+         * @param sheetRowObj
+         * {
 				"MODEL NAME":{
 					instance: "MODEL INSTANCE",
 					where:{},
@@ -20,229 +21,117 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 					beforeSave:[]
 				}
 			}
-		 @param callback {Function}
-		 */
-		addSchoolId: function (sheetRowObj, callback) {
-			//console.log(sheetRowObj.School);
-			if(sheetRowObj.School){
-				//Check if data is saved already..
-				if(sheetRowObj.School.results){
-					let schoolId = sheetRowObj.School.results.id;
-					//Now add school id to admin..data obj..
-					if(sheetRowObj.Admin){
-						if(sheetRowObj.Admin.data){
-							sheetRowObj.Admin.data["schoolId"] = schoolId;
-						}
-					}
-				}
-			}
-			callback(null);
-		},
-		/**
-		 * Add default password to admin data...
-		 * @param sheetRowObj
-		 * @param callback
-		 */
-		addPassword: function (sheetRowObj, callback) {
-			if(sheetRowObj.School){
-				//Check if data is saved already..
-				if(sheetRowObj.School.results){
-					let schoolId = sheetRowObj.School.results.id;
-					//Now add school id to admin..data obj..
-					if(sheetRowObj.Admin){
-						if(sheetRowObj.Admin.data){
-							sheetRowObj.Admin.data.password = "12345";
-						}
-					}
-				}
-			}
-			callback(null);
-		},
-		addTeacherBeforeSave: function (sheetRowObj, callback) {
-			//Get school data from parent sheet..
-			if(sheetRowObj.Teacher.config){
-				if(sheetRowObj.Teacher.config.parent){
-					//Get admin sheet
-					var dataList = sheetRowObj.Teacher.config.parent["Admin"];
-					var row = dataList[0];
-					if(row){
-						if(row.School){
-							if(row.School.results){
-								let schoolId = row.School.results.id;
-								if(sheetRowObj.Teacher){
-									if(sheetRowObj.Teacher.data){
-										sheetRowObj.Teacher.data.password = 12345;
-										sheetRowObj.Teacher.data.schoolId = schoolId;
-									}
-								}
-								return callback(null);
-							}
-						}
-					}
-				}
-			}
-			return callback(new Error("School data not present for teacher save"));
-		},
-		addStudentBeforeSave: function (sheetRowObj, callback) {
-			//Get school data from parent sheet..
-			if(sheetRowObj.Student.config){
-				if(sheetRowObj.Student.config.parent){
-					//Get admin sheet
-					var dataList = sheetRowObj.Student.config.parent["Admin"];
-					var row = dataList[0];
-					if(row){
-						if(row.School){
-							if(row.School.results){
-								let schoolId = row.School.results.id;
-								if(sheetRowObj.Student){
-									if(sheetRowObj.Student.data){
-										sheetRowObj.Student.data.password = 12345;
-										sheetRowObj.Student.data.schoolId = schoolId;
-										if(sheetRowObj.Student.data.email){
-											sheetRowObj.Student.where.schoolId = schoolId;
-											sheetRowObj.Student.where.email = sheetRowObj.Student.data.email;
-										}
+         @param callback {Function}
+         */
+		addCityId: function (sheetRowObj, callback) {
+			const City = server.models["City"];
+			const Area = server.models["Area"];
+			let city;
+			if(sheetRowObj.Area.data){
+				if(sheetRowObj.Area.data.name){
+					 City.findOne({
+						 where:{
+							 name: "Delhi"
+						 }
+					 })
+					 .then(function (_city) {
+					     if(_city){
+                             city = _city;
+                             return Area.findOne({
+                                 where:{
+                                     name: sheetRowObj.Area.data.name
+                                 }
+                             });
+                         }else{
+					         throw new Error("City not found");
+                         }
+					 })
+                     .then(function (area) {
+                         if(!area){
+                             return Area.create({
+                                 name: sheetRowObj.Area.data.name,
+                                 cityId: city.id
+                             });
+                         }else{
+                             return area;
+                         }
 
-										if(sheetRowObj.Student.data.class !== undefined && sheetRowObj.Student.data.section !== undefined){
-											//Now set student class and section..
-											var AinakClassAndSection = server.models.AinakClassAndSection;
-											AinakClassAndSection.findOne({
-												where:{
-													name: sheetRowObj.Student.data.class,
-													section: sheetRowObj.Student.data.section,
-													schoolId: schoolId
-												}
-											})
-												.then(function (classInstance) {
-													if(!classInstance){
-														return AinakClassAndSection.create({
-															name: sheetRowObj.Student.data.class,
-															section: sheetRowObj.Student.data.section,
-															schoolId: schoolId
-														});
-													}else{
-														return classInstance;
-													}
-												})
-												.then(function (classInstance) {
-													if(classInstance){
-														//Now get the class id..
-														sheetRowObj.Student.data.ainakClassAndSectionId = classInstance.id;
-														if(sheetRowObj.Student.data.email){
-															sheetRowObj.Student.where.ainakClassAndSectionId = classInstance.id;
-														}
-
-														//Now delete unwanted data..
-														delete sheetRowObj.Student.data.class;
-														delete sheetRowObj.Student.data.section;
-														callback(null);
-
-													}else{
-														callback(new Error("Class could not be created"));
-													}
-												})
-												.catch(function (error) {
-													callback(error);
-												});
-										}
-									}
-								}
-							}
-						}
-					}
+                     })
+                     .then(function (area) {
+                         if(area){
+                             sheetRowObj.Customer.data.areaId = area.id;
+                             sheetRowObj.Customer.data.cityId = city.id;
+                         }
+                         callback(null);
+                     })
+					 .catch(function (error) {
+						 callback(error);
+					 });
+				}else{
+					callback(new Error("Area not found"));
 				}
 			}else{
-				return callback(new Error("School data not present for Student save"));
+                callback(new Error("Area not found"));
 			}
 
-		},
-		addParentBeforeSave: function (sheetRowObj, callback) {
-			//Get school data from parent sheet..
-			if(sheetRowObj.Parent.config){
-				if(sheetRowObj.Parent.config.parent){
-					//Get admin sheet
-					var dataList = sheetRowObj.Parent.config.parent["Admin"];
-					var row = dataList[0];
-					if(row){
-						if(row.School){
-							if(row.School.results){
-								let schoolId = row.School.results.id;
-								if(sheetRowObj.Parent){
-									if(sheetRowObj.Parent.data){
-										sheetRowObj.Parent.data.password = 12345;
-										sheetRowObj.Parent.data.schoolId = schoolId;
-										if(sheetRowObj.Parent.data.email){
-											sheetRowObj.Parent.where.schoolId = schoolId;
-											sheetRowObj.Parent.where.email = sheetRowObj.Parent.data.email;
-										}
-
-										if(sheetRowObj.Parent.data.studentClass !== undefined &&
-											sheetRowObj.Parent.data.studentSection !== undefined &&
-											sheetRowObj.Parent.data.studentName !== undefined ){
-											//Now set student class and section..
-											var AinakClassAndSection = server.models.AinakClassAndSection;
-											AinakClassAndSection.findOne({
-												where:{
-													name: sheetRowObj.Parent.data.studentClass,
-													section: sheetRowObj.Parent.data.studentSection,
-													schoolId: schoolId
-												}
-											})
-												.then(function (classInstance) {
-													if(!classInstance){
-														callback(new Error("Wrong class name given in Parent sheet of parent name: ", sheetRowObj.Parent.data.name));
-													}else{
-														sheetRowObj.Parent.data.ainakClassAndSectionId = classInstance.id;
-														/*if(sheetRowObj.Parent.data.email){
-															sheetRowObj.Parent.where.ainakClassAndSectionId = classInstance.id;
-														}*/
-														//Now fetch the data for student..
-														const Student = server.models.Student;
-														return Student.findOne({
-															where:{
-																schoolId: schoolId,
-																ainakClassAndSectionId: classInstance.id,
-																name: sheetRowObj.Parent.data.studentName
-															}
-														});
-													}
-												})
-												.then(function (studentInstance) {
-													if(studentInstance){
-														//Now get the class id..
-														sheetRowObj.Parent.data.studentId = studentInstance.id;
-														if(sheetRowObj.Parent.data.email){
-															sheetRowObj.Parent.where.studentId = studentInstance.id;
-														}
-
-														//Now delete unwanted data..
-														delete sheetRowObj.Parent.data.studentClass;
-														delete sheetRowObj.Parent.data.studentSection;
-														delete sheetRowObj.Parent.data.studentName;
-
-														callback(null);
-													}else{
-														callback(new Error("Class could not be created"));
-													}
-												})
-												.catch(function (error) {
-													callback(error);
-												});
-										}
-										else{
-											return callback(new Error("Parent data not correct for name" + sheetRowObj.Parent.data.name));
-										}
-									}
-								}
-							}
-						}
-					}
+        },
+        /**
+         *
+         * @param sheetRowObj
+         * {
+				"MODEL NAME":{
+					instance: "MODEL INSTANCE",
+					where:{},
+					data:{
+						//Data which is going to be saved
+					},
+					results:{
+						//server results
+					},
+					beforeSave:[]
 				}
-			}else{
-				return callback(new Error("School data not present for Parent save"));
 			}
+         @param callback {Function}
+         */
+		beforeCustomerSave: function(sheetRowObj, callback){
+            const Customer = server.models["Customer"];
+            if(sheetRowObj.Customer){
+                if(sheetRowObj.Customer.data){
+                    if(!sheetRowObj.Customer.data.mobileNumber){
+                        if(sheetRowObj.Customer.data.accountNumber){
+                            sheetRowObj.Customer.data.mobileNumber = sheetRowObj.Customer.data.accountNumber;
+                        }
+                    }
+                }
+             }
+
+
+
+             //Sanitize mobile number..
+            sheetRowObj.Customer.data.mobileNumber = sheetRowObj.Customer.data.mobileNumber.replace(/\/\d+$/,'');
+
+            sheetRowObj.Customer.where.mobileNumber = sheetRowObj.Customer.data.mobileNumber;
+
+            if(sheetRowObj.Customer.data.subscription_time){
+                sheetRowObj.Customer.data.subscription_time = sheetRowObj.Customer.data.subscription_time || "07:30";
+                sheetRowObj.Customer.data.subscription_time = moment.utc(sheetRowObj.Customer.data.subscription_time, "hh:mm").toDate();
+
+            }
+
+            if(sheetRowObj.Customer.data.subscription_startDate){
+                sheetRowObj.Customer.data.subscription_startDate = moment.utc(sheetRowObj.Customer.data.subscription_startDate, "DD-MM-YYYY").toDate();
+            }
+
+
+            sheetRowObj.Customer.data.type = "individual";
+            sheetRowObj.Customer.data.subscriptionType = "subscription";
+            sheetRowObj.Customer.data.added   = moment.utc().toDate();
+            sheetRowObj.Customer.data.updated = moment.utc().toDate();
+
+
+
+            callback(null);
 		}
-
 	};
 
 	return{

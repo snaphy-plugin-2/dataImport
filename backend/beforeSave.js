@@ -105,10 +105,18 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                 }
              }
 
+            if(sheetRowObj.Customer.data.firstName){
+                sheetRowObj.Customer.data.firstName = sheetRowObj.Customer.data.firstName.replace(/\*+/,'');
+            }
+
+            if(sheetRowObj.Customer.data.lastName){
+                sheetRowObj.Customer.data.lastName = sheetRowObj.Customer.data.lastName.replace(/\*+/,'');
+            }
 
 
              //Sanitize mobile number..
             sheetRowObj.Customer.data.mobileNumber = sheetRowObj.Customer.data.mobileNumber.replace(/\/\d+$/,'');
+
 
             sheetRowObj.Customer.where.mobileNumber = sheetRowObj.Customer.data.mobileNumber;
 

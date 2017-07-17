@@ -2,7 +2,7 @@
 module.exports = function( server, databaseObj, helper, packageObj) {
 	const Promise = require("bluebird");
 	const afterSave = {
-        addSubscription: function (sheetRowObj, callback) {
+        /*addSubscription: function (sheetRowObj, callback) {
 			if(sheetRowObj.Customer){
 				if(sheetRowObj.Customer.data){
 					const Subscription = server.models["Subscription"];
@@ -21,7 +21,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                         });
 				}
 			}
-        }
+        }*/
 	};
 
 	return {

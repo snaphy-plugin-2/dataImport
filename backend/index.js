@@ -219,42 +219,46 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 	 * @param callback
 	 */
 	const saveModelToServer = function (sheetRowObj, modelObj, modelName, callback) {
-		//Now if
-		if(_.isEmpty(modelObj.where)){
-			//Create data..
-			modelObj.instance.create(modelObj.data)
-				.then(function (dataObj) {
-					addSheetDataToResults(sheetRowObj, modelName, dataObj);
-					//console.log(modelName + " Data saved successfully");
-					callback(null);
-				})
-				.catch(function (error) {
-					console.log(error);
-					callback(error);
-				});
-		}else{
-			//Find first and update if present..
-			modelObj.instance.findOne({
-				where: modelObj.where
-			})
-				.then(function (dataObj) {
-					if(dataObj){
-						//console.log(modelObj.data);
-						modelObj.data.id = dataObj.id ;
-					}
-					//Return promise object..
-					return modelObj.instance.upsert(modelObj.data);
-				})
-				.then(function (dataObj) {
-					addSheetDataToResults(sheetRowObj, modelName, dataObj);
-					//console.log(modelName + " Data updated successfully");
-					callback(null);
-				})
-				.catch(function (error) {
-					console.log(error);
-					callback(error);
-				});
-		}
+	    if(modelObj.autoUpdate){
+            //Now if
+            if(_.isEmpty(modelObj.where)){
+                //Create data..
+                modelObj.instance.create(modelObj.data)
+                    .then(function (dataObj) {
+                        addSheetDataToResults(sheetRowObj, modelName, dataObj);
+                        //console.log(modelName + " Data saved successfully");
+                        callback(null);
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                        callback(error);
+                    });
+            }else{
+                //Find first and update if present..
+                modelObj.instance.findOne({
+                    where: modelObj.where
+                })
+                    .then(function (dataObj) {
+                        if(dataObj){
+                            //console.log(modelObj.data);
+                            modelObj.data.id = dataObj.id ;
+                        }
+                        //Return promise object..
+                        return modelObj.instance.upsert(modelObj.data);
+                    })
+                    .then(function (dataObj) {
+                        addSheetDataToResults(sheetRowObj, modelName, dataObj);
+                        //console.log(modelName + " Data updated successfully");
+                        callback(null);
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                        callback(error);
+                    });
+            }
+        }else{
+	        callback(null);
+        }
 	};
 
 
@@ -388,7 +392,10 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 												}
 
 												if(property.unique){
-													where[property.modelProperty] = columnValue;
+                                                    var pattern = new RegExp(columnValue, "i"); /* case-insensitive RegExp search */
+                                                    where[property.modelProperty] = {
+                                                        like: pattern
+                                                    };
 												}
 												modelObj[property.modelProperty] = columnValue;
 											}
@@ -400,6 +407,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 									dataObj[structureObj.model].where = where;
 									dataObj[structureObj.model].data = modelObj;
 									dataObj[structureObj.model].beforeSave = structureObj.beforeSave || [];
+                                    dataObj[structureObj.model].autoUpdate = structureObj.autoUpdate !== undefined? structureObj.autoUpdate : true ;
 									dataObj[structureObj.model].afterSave = structureObj.afterSave || [];
 									dataObj[structureObj.model].config = {
 										rowNumber: rowNumber,

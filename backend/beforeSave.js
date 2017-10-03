@@ -2,6 +2,7 @@
 module.exports = function( server, databaseObj, helper, packageObj) {
 	const Promise = require("bluebird");
 	const moment = require("moment");
+    const _   =require("lodash");
 	//Method for storing before save..methods..
 	//MEthod can be added externally through plugin method attached to beforeSave.
 	const beforeSave = {
@@ -26,8 +27,9 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 		addCityId: function (sheetRowObj, callback) {
 			const City = server.models["City"];
 			const Area = server.models["Area"];
-			let city;
+			var city;
 			if(sheetRowObj.Area.data){
+                sheetRowObj.Area.data.name = _.capitalize(sheetRowObj.Area.data.name);
 				if(sheetRowObj.Area.data.name){
 					 City.findOne({
 						 where:{
@@ -39,7 +41,8 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                              city = _city;
                              return Area.findOne({
                                  where:{
-                                     name: sheetRowObj.Area.data.name
+                                     name: _.capitalize(sheetRowObj.Area.data.name),
+                                     cityId: _city.id
                                  }
                              });
                          }else{
@@ -113,9 +116,11 @@ module.exports = function( server, databaseObj, helper, packageObj) {
                 sheetRowObj.Customer.data.lastName = sheetRowObj.Customer.data.lastName.replace(/\*+/,'');
             }
 
-
-             //Sanitize mobile number..
-            sheetRowObj.Customer.data.mobileNumber = sheetRowObj.Customer.data.mobileNumber.replace(/\/\d+$/,'');
+            if(sheetRowObj.Customer.data.mobileNumber){
+                sheetRowObj.Customer.data.mobileNumber = sheetRowObj.Customer.data.mobileNumber.toString();
+                //Sanitize mobile number..
+                sheetRowObj.Customer.data.mobileNumber = sheetRowObj.Customer.data.mobileNumber.replace(/\/\d+$/,'');
+            }
 
 
             sheetRowObj.Customer.where.mobileNumber = sheetRowObj.Customer.data.mobileNumber;
@@ -127,7 +132,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
             }
 
             if(sheetRowObj.Customer.data.subscription_startDate){
-                sheetRowObj.Customer.data.subscription_startDate = moment.utc(sheetRowObj.Customer.data.subscription_startDate, "DD-MM-YYYY").toDate();
+                sheetRowObj.Customer.data.subscription_startDate = moment.utc(sheetRowObj.Customer.data.subscription_startDate, "DD/MM/YYYY").toDate();
             }
 
 

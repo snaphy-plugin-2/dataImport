@@ -33,7 +33,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 				if(sheetRowObj.Area.data.name){
 					 City.findOne({
 						 where:{
-							 name: "Delhi"
+							 name: "Mumbai"
 						 }
 					 })
 					 .then(function (_city) {

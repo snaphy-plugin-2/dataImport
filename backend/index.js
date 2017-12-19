@@ -319,6 +319,13 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 		}
 	};
 
+	function escapeRegExp(str) {
+		if(str){
+			return str.toString().replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+		}
+		return str;
+	}
+
 
 	/**
 	 * Process each worksheet

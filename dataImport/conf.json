@@ -11,75 +11,22 @@
     "containerModel": "ImportData",
     "fileDataSource": "ImportData"
   },
+  "filePath":{
+    "beforeSave": "../../synapsica/backend/beforeSave.js"
+  },
   "worksheet":{
     "Sheet1":{
       "structure":[
         {
-          "model": "Area",
+          "model": "Degree",
           "properties":[
             {
-              "sheetColName": "Area",
+              "sheetColName": "name",
               "modelProperty":"name",
               "unique": true
             }
           ],
-          "beforeSave":["addCityId"]
-        },
-        {
-          "model": "Customer",
-          "properties":[
-            {
-              "sheetColName": "Road",
-              "modelProperty":"roadName",
-              "unique": false
-            },
-            {
-              "sheetColName": "First name",
-              "modelProperty":"firstName",
-              "unique": false
-            },
-            {
-              "sheetColName": "Last name",
-              "modelProperty":"lastName",
-              "unique": false
-            },
-            {
-              "sheetColName": "E-mail",
-              "modelProperty":"email",
-              "unique": false
-            },
-            {
-              "sheetColName": "E-mail",
-              "modelProperty":"email",
-              "unique": true
-            },
-            {
-              "sheetColName": "Time",
-              "modelProperty":"time",
-              "unique": false
-            },
-            {
-              "sheetColName": "Address",
-              "modelProperty":"address",
-              "unique": false
-            },
-            {
-              "sheetColName": "Account number",
-              "modelProperty":"accountNumber",
-              "unique": false
-            },
-            {
-              "sheetColName": "Phone",
-              "modelProperty":"phoneNumber",
-              "unique": false
-            },
-            {
-              "sheetColName": "Mobile",
-              "modelProperty":"mobileNumber",
-              "unique": true
-            }
-          ],
-          "beforeSave":["validateMobileNumber"]
+          "beforeSave":["addDegree"]
         }
       ]
     }

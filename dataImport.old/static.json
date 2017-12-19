@@ -12,15 +12,7 @@
   "settings": ["/dataImport/admin-panel-setting.js"],
   "bodystructure": {
     "asidebarHook": [],
-    "sidebarHook": [
-      {
-        "path":"views/sidebarHook.html",
-        "acl":{
-          "allow":[],
-          "reject":[]
-        }
-      }
-    ],
+    "sidebarHook": [],
     "headerHook": [],
     "footerHook":[]
   }

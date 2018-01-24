@@ -12,7 +12,7 @@
     "fileDataSource": "ImportData"
   },
   "filePath":{
-    "beforeSave": "../../synapsica/backend/beforeSave.js"
+    "beforeSave": "../../snaphyHelper/backend/beforeSave.js"
   },
   "worksheet":{
     "Sheet1":{

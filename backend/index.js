@@ -160,56 +160,64 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 								if(error){
 									callback(error);
 								}else{
-									saveModelToServer(sheetRowObj, modelObj, modelName, function(error, data){
-										if(error){
-											callback(error);
-										}else{
-											//Call after save if any..present..
-											const afterSaveSeries = [];
-											if(modelObj.afterSave){
-												if(modelObj.afterSave.length){
-													//Now run each before save..
-													modelObj.afterSave.forEach(function (afterSaveMethodName) {
-														if(afterSave){
-															if(afterSave[afterSaveMethodName]){
-																afterSaveSeries.push(function (callback) {
-																	//Now call the method..
-																	afterSave[afterSaveMethodName](sheetRowObj, callback);
-																});
+									if(modelObj.saveToDb === false){
+										callback(null);
+									}else{
+										saveModelToServer(sheetRowObj, modelObj, modelName, function(error, data){
+											if(error){
+												callback(error);
+											}else{
+												//Call after save if any..present..
+												const afterSaveSeries = [];
+												if(modelObj.afterSave){
+													if(modelObj.afterSave.length){
+														//Now run each before save..
+														modelObj.afterSave.forEach(function (afterSaveMethodName) {
+															if(afterSave){
+																if(afterSave[afterSaveMethodName]){
+																	afterSaveSeries.push(function (callback) {
+																		//Now call the method..
+																		afterSave[afterSaveMethodName](sheetRowObj, callback);
+																	});
+																}
 															}
-														}
-													});
+														});
+													}
 												}
-											}
 
-											//Call after save if any..
-											if(afterSaveSeries){
-												if(afterSaveSeries.length){
-													//Saving modelObj data..
-													async.waterfall(afterSaveSeries, function (error, data) {
-														if(error){
-															callback(error);
-														}else{
-															callback(null);
-														}
-													});
+												//Call after save if any..
+												if(afterSaveSeries){
+													if(afterSaveSeries.length){
+														//Saving modelObj data..
+														async.waterfall(afterSaveSeries, function (error, data) {
+															if(error){
+																callback(error);
+															}else{
+																callback(null);
+															}
+														});
 
+													}else{
+														callback(null);
+													}
 												}else{
 													callback(null);
 												}
-											}else{
-												callback(null);
 											}
-										}
-									});
+										});
+									}
 								}
 							});
 						}else{
-							//Just save..data
-							if(modelObj.instance){
-								saveModelToServer(sheetRowObj, modelObj, modelName, callback);
+							if(modelObj.saveToDb === false){
+								callback(null);
 							}else{
-								callback(new Error("Instance of model " + modelName + " not present"));
+								//Just save..data
+								if(modelObj.instance){
+									saveModelToServer(sheetRowObj, modelObj, modelName, callback);
+								}else{
+									callback(new Error("Instance of model " + modelName + " not present"));
+								}
 							}
 						}
 					}
@@ -432,6 +440,7 @@ module.exports = function( server, databaseObj, helper, packageObj) {
 									dataObj[structureObj.model].data = modelObj;
 									dataObj[structureObj.model].beforeSave = structureObj.beforeSave || [];
                                     dataObj[structureObj.model].autoUpdate = structureObj.autoUpdate !== undefined? structureObj.autoUpdate : true ;
+									dataObj[structureObj.model].saveToDb = structureObj.saveToDb !== undefined? structureObj.saveToDb : true;
 									dataObj[structureObj.model].afterSave = structureObj.afterSave || [];
 									dataObj[structureObj.model].config = {
 										rowNumber: rowNumber,
